@@ -8,6 +8,10 @@ import {
 } from "@modelcontextprotocol/sdk/types.js";
 
 import { pingTool, handlePing } from "./tools/ping.js";
+import {
+  searchBusinessesTool,
+  handleSearchBusinesses,
+} from "./tools/search_businesses.js";
 
 const server = new Server(
   {
@@ -24,17 +28,32 @@ const server = new Server(
 // Register tool listing
 server.setRequestHandler(ListToolsRequestSchema, async () => {
   return {
-    tools: [pingTool],
+    tools: [pingTool, searchBusinessesTool],
   };
 });
 
 // Register tool call handler
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
-  const { name } = request.params;
+  const { name, arguments: args } = request.params;
 
   switch (name) {
     case "ping": {
       const result = await handlePing();
+      return {
+        content: [
+          {
+            type: "text",
+            text: result,
+          },
+        ],
+      };
+    }
+    case "search_businesses": {
+      const result = await handleSearchBusinesses(args as {
+        location: string;
+        radius?: number;
+        maxResults?: number;
+      });
       return {
         content: [
           {
