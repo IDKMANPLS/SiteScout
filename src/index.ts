@@ -12,6 +12,10 @@ import {
   searchBusinessesTool,
   handleSearchBusinesses,
 } from "./tools/search_businesses.js";
+import {
+  generateSiteTool,
+  handleGenerateSite,
+} from "./tools/generate_site.js";
 
 const server = new Server(
   {
@@ -28,7 +32,7 @@ const server = new Server(
 // Register tool listing
 server.setRequestHandler(ListToolsRequestSchema, async () => {
   return {
-    tools: [pingTool, searchBusinessesTool],
+    tools: [pingTool, searchBusinessesTool, generateSiteTool],
   };
 });
 
@@ -53,6 +57,24 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         location: string;
         radius?: number;
         maxResults?: number;
+      });
+      return {
+        content: [
+          {
+            type: "text",
+            text: result,
+          },
+        ],
+      };
+    }
+    case "generate_site": {
+      const result = await handleGenerateSite(args as {
+        business_name: string;
+        address?: string;
+        phone?: string;
+        description?: string;
+        photos?: string[];
+        output_path?: string;
       });
       return {
         content: [
