@@ -99,8 +99,15 @@ export async function handleSearchBusinesses(args: {
     });
   }
 
-  const radius = args.radius ?? 5000;
-  const maxResults = args.maxResults ?? 20;
+  // Input validation
+  if (!args.location || args.location.trim().length === 0) {
+    return JSON.stringify({
+      error: "Missing required parameter: 'location' must be a non-empty string (e.g., 'Austin, TX').",
+    });
+  }
+
+  const radius = args.radius != null && args.radius > 0 ? args.radius : 5000;
+  const maxResults = args.maxResults != null && args.maxResults > 0 ? args.maxResults : 20;
 
   // Step 1: Use Places Text Search to find businesses in the area
   const textSearchUrl = new URL("https://maps.googleapis.com/maps/api/place/textsearch/json");
@@ -159,7 +166,7 @@ export async function handleSearchBusinesses(args: {
     // Skip businesses that already have a website
     if (details.website) continue;
 
-    const photoUrls = buildPhotoUrls(details.photos ?? [], apiKey);
+    const photoUrls = buildPhotoUrls(details.photos ?? []);
 
     businesses.push({
       name: details.name ?? candidates[i].name ?? "Unknown",
@@ -178,6 +185,7 @@ export async function handleSearchBusinesses(args: {
     searched: candidates.length,
     location: args.location,
     radius,
+    photoNote: "Photo URLs require appending &key=YOUR_GOOGLE_PLACES_API_KEY to work.",
     message:
       businesses.length > 0
         ? `Found ${businesses.length} businesses without websites in "${args.location}".`
@@ -208,8 +216,8 @@ async function fetchPlaceDetails(
   return data.result;
 }
 
-function buildPhotoUrls(photos: PlacePhoto[], apiKey: string): string[] {
+function buildPhotoUrls(photos: PlacePhoto[]): string[] {
   return photos.slice(0, 5).map((photo) => {
-    return `https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photo_reference=${photo.photo_reference}&key=${apiKey}`;
+    return `https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photo_reference=${photo.photo_reference}`;
   });
 }
